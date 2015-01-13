@@ -85,8 +85,10 @@ class StockDrawer(object):
         plt.ylabel('RSI')
         self.axis_list.append(ax0)
 
+        for label in ax0.xaxis.get_ticklabels():
+            label.set_rotation(45)
 
-    def draw_historical_data(self, np_historical_data):
+    def draw_historical_data(self, np_historical_data, np_top_bottom_points):
         
         np_historical_data_trans = np.transpose(np_historical_data)
         date = np_historical_data_trans[0]
@@ -107,7 +109,7 @@ class StockDrawer(object):
         ax1.spines['left'].set_color("#5998ff")
         ax1.spines['right'].set_color("#5998ff")
         ax1.tick_params(axis='y', colors='w')
-        ax1.xaxis.set_major_locator(mticker.MaxNLocator(10))
+        ax1.xaxis.set_major_locator(mticker.MaxNLocator(20))
         ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
         self.axis_list.append(ax1)
 
@@ -129,24 +131,26 @@ class StockDrawer(object):
         for label in ax2.xaxis.get_ticklabels():
             label.set_rotation(90)
 
-        
+        np_top_bottom_points_trans = np.transpose(np_top_bottom_points)
+        date = np_top_bottom_points_trans[0]
+        ord_volume = np_top_bottom_points_trans[1]
+        trend = np_top_bottom_points_trans[2]
+        price = np_top_bottom_points_trans[3]
+        ax1.plot(date, price, color='y')
 
-    def show(self):
-        matplotlib.rcParams.update({'font.size': 9})
-        self.plt.subplots_adjust(left=.10, bottom=.10, right=.93, top=.95, wspace=.20, hspace=.00)
+        for index in range(len(date)):
+            if trend[index] == TREND_UP:
+                ax1.annotate(str(locale.format("%d", float(ord_volume[index]), grouping=True)+str('(U)')),
+                             (date[index], price[index]),
+                             fontsize="9", color='w',
+                             horizontalalignment='left', verticalalignment='top')
+            else:
+                ax1.annotate(str(locale.format("%d", float(ord_volume[index]), grouping=True)+str('(D)')),
+                             (date[index], price[index]),
+                             fontsize="9", color='w',
+                             horizontalalignment='left', verticalalignment='bottom')
 
-        # Remove all the axis labels but the last one
-        for index in range(len(self.axis_list)):
-            if index == len(self.axis_list):
-                break
-            self.plt.setp(self.axis_list[index].get_xticklabels(), visible=False)
         
-        self.plt.xlabel("Date")
-        self.plt.suptitle("Stock Price and Volume and Ord Volume")
-        self.plt.show()
-        
-
-class OrdDrawer(StockDrawer):
     def draw_ord_volume_data(self, np_top_bottom_points):
 
         np_top_bottom_points_trans = np.transpose(np_top_bottom_points)
@@ -182,5 +186,22 @@ class OrdDrawer(StockDrawer):
                              fontsize="9", color='r',
                              horizontalalignment='left', verticalalignment='bottom')
 
+
+
+    def show(self):
+        matplotlib.rcParams.update({'font.size': 9})
+        self.plt.subplots_adjust(left=.10, bottom=.10, right=.93, top=.95, wspace=.20, hspace=.00)
+
+        # Remove all the axis labels but the last one
+        for index in range(len(self.axis_list)):
+            if index == len(self.axis_list)-1:
+                break
+            self.plt.setp(self.axis_list[index].get_xticklabels(), visible=False)
+        
+        self.plt.xlabel("Date")
+        self.plt.suptitle("Stock Price and Volume and Ord Volume")
+        self.plt.show()
+
+        
 if __name__ == "__main__":
     print 'HI'

@@ -98,6 +98,18 @@ class Analyzer(object):
         elif data_range_type == MONTHLY_DATA:
             return None
 
+
+    def _get_high_real(self, open_price, close_price):
+        if open_price >= close_price:
+            return open_price
+        else:
+            return close_price
+
+    def _get_low_real(self, open_price, close_price):
+        if open_price <= close_price:
+            return open_price
+        else:
+            return close_price
     
     '''
     zoom: days to decide high-end point. The date that is higher/lower than +-'zoom' days will be the high/low point
@@ -113,6 +125,7 @@ class Analyzer(object):
                 #print(index)
                 
                 for inner_index in range(1, zoom+1):
+                    
                     #print(inner_index)
                     # Check previous
                     if index-inner_index >= 0 and float(historical_data[index-inner_index]['High'])>float(historical_data[index]['High']):
@@ -121,6 +134,15 @@ class Analyzer(object):
                     # Check following
                     if index+inner_index < historical_data_length and float(historical_data[index+inner_index]['High'])>float(historical_data[index]['High']):
                         return False
+                    '''
+                    # Check previous
+                    if index-inner_index >= 0 and self._get_high_real(float(historical_data[index-inner_index]['Open']), float(historical_data[index-inner_index]['Close']))>self._get_high_real(float(historical_data[index]['Open']), float(historical_data[index]['Close'])):
+                        return False
+
+                    # Check following
+                    if index+inner_index < historical_data_length and self._get_high_real(float(historical_data[index+inner_index]['Open']), float(historical_data[index+inner_index]['Close']))>self._get_high_real(float(historical_data[index]['Open']), float(historical_data[index]['Close'])):
+                        return False
+                    '''
                 return True
             
         return False
@@ -140,6 +162,7 @@ class Analyzer(object):
                 #print(index)
                 
                 for inner_index in range(1, zoom+1):
+                    
                     #print(inner_index)
                     # Check previous
                     if index-inner_index >= 0 and float(historical_data[index-inner_index]['Low'])<float(historical_data[index]['Low']):
@@ -148,6 +171,15 @@ class Analyzer(object):
                     # Check following
                     if index+inner_index < historical_data_length and float(historical_data[index+inner_index]['Low'])<float(historical_data[index]['Low']):
                         return False
+                    '''
+                    # Check previous
+                    if index-inner_index >= 0 and self._get_low_real(float(historical_data[index-inner_index]['Open']), float(historical_data[index-inner_index]['Close']))<self._get_low_real(float(historical_data[index]['Open']), float(historical_data[index]['Close'])):
+                        return False
+
+                    # Check following
+                    if index+inner_index < historical_data_length and self._get_low_real(float(historical_data[index+inner_index]['Open']), float(historical_data[index+inner_index]['Close']))<self._get_low_real(float(historical_data[index]['Open']), float(historical_data[index]['Close'])):
+                        return False
+                    '''
                 return True
             
         return False
@@ -172,18 +204,19 @@ class Analyzer(object):
                 if next_point is not None:
                     next_point_fmtdate = datetime.datetime.strptime(next_point.get_start_date(), "%Y-%m-%d").date()
                     
-                if cur_data_fmtdate >= cur_point_fmtdate and next_point_fmtdate is not None and cur_data_fmtdate < next_point_fmtdate:
+                if cur_data_fmtdate > cur_point_fmtdate and next_point_fmtdate is not None and cur_data_fmtdate <= next_point_fmtdate:
                     total_volumn = total_volumn + int(cur_data['Volume'])
                     total_days = total_days + 1
-                elif cur_data_fmtdate >= cur_point_fmtdate and next_point is None:
+                elif cur_data_fmtdate > cur_point_fmtdate and next_point is None:
                     total_volumn = total_volumn + int(cur_data['Volume'])
                     total_days = total_days + 1
-                elif next_point_fmtdate is not None and cur_data_fmtdate >= next_point_fmtdate:
+                elif next_point_fmtdate is not None and cur_data_fmtdate > next_point_fmtdate:
                     break
                 
 
             #print(str(total_volumn) + ": " + str(total_days))
-            cur_point.set_ord_volume(total_volumn/total_days)    
+            if total_days != 0:
+                cur_point.set_ord_volume(total_volumn/total_days)    
             #print(cur_point)
         return 
     
@@ -248,7 +281,7 @@ class Analyzer(object):
 if __name__ == "__main__":
     stock = raw_input('Stock to plot: ')
     share = Share(stock)
-    ord_drawer = OrdDrawer()
+    ord_drawer = StockDrawer()
     ord_analyzer = Analyzer(share, ord_drawer)
 
     start_date = '2014-07-01'
@@ -268,9 +301,9 @@ if __name__ == "__main__":
 
 
     
-    ord_analyzer.get_drawer().draw_historical_data(np_historical_data)
+    ord_analyzer.get_drawer().draw_historical_data(np_historical_data, np_top_bottom_points)
     ord_analyzer.get_drawer().draw_rsi(np_historical_data)
-    ord_analyzer.get_drawer().draw_ord_volume_data(np_top_bottom_points)
+    #ord_analyzer.get_drawer().draw_ord_volume_data(np_top_bottom_points)
     
     ord_analyzer.get_drawer().show()
     
